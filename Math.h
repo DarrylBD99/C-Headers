@@ -8,7 +8,7 @@
 
 template <typename T>
 static T lerp(const T a, const T b, const float time) {
-    return a * (1.0f - time) + (b * t);
+    return a * (1.0f - time) + (b * time);
 }
 
 class Vec3 {
@@ -57,11 +57,11 @@ class Vec3 {
         }
 
         float Min() const {
-            return std::min(x, y, z);
+            return std::min({x, y, z});
         }
 
         float Max() const {
-            return std::max(x, y, z);
+            return std::max({x, y, z});
         }
 
         std::string ToString() {
@@ -154,11 +154,11 @@ class Vec4 {
 
 class Matrix {
     private:
-        float Det2(float data[4]) {
+        float Det2(float data[4]) const {
             return (data[0] * data[3]) - (data[1] * data[2]);
         }
 
-        float Det3(float data[9]) {
+        float Det3(float data[9]) const {
             float matrix2A[4] = {
                 data[4], data[5],
                 data[7], data[8]
@@ -175,7 +175,7 @@ class Matrix {
             return (data[0] * Det2(matrix2A)) - (data[1] * Det2(matrix2B)) + (data[2] * Det2(matrix2C));
         }
 
-        Matrix mul(const Matrix& matrix) const {
+        Matrix Mul(const Matrix& matrix) const {
             Matrix ret;
             ret.m[0] = m[0] * matrix.m[0] + m[1] * matrix.m[4] + m[2] * matrix.m[8] + m[3] * matrix.m[12];
             ret.m[1] = m[0] * matrix.m[1] + m[1] * matrix.m[5] + m[2] * matrix.m[9] + m[3] * matrix.m[13];
@@ -202,42 +202,21 @@ class Matrix {
             float m[16];
         };
 
-        Matrix() {
-            a[0][0] = 1;
-            a[1][1] = 1;
-            a[2][2] = 1;
-            a[3][3] = 1;
-        }
-
         Matrix(float values[16]) {
-            m[0] = values[0];
-            m[1] = values[1];
-            m[2] = values[2];
-            m[3] = values[3];
-            m[4] = values[4];
-            m[5] = values[5];
-            m[6] = values[6];
-            m[7] = values[7];
-            m[8] = values[8];
-            m[9] = values[9];
-            m[10] = values[10];
-            m[11] = values[11];
-            m[12] = values[12];
-            m[13] = values[13];
-            m[14] = values[14];
-            m[15] = values[15];
+            m[0] = values[0]; m[1] = values[1]; m[2] = values[2]; m[3] = values[3];
+            m[4] = values[4]; m[5] = values[5]; m[6] = values[6]; m[7] = values[7];
+            m[8] = values[8]; m[9] = values[9]; m[10] = values[10]; m[11] = values[11];
+            m[12] = values[12]; m[13] = values[13]; m[14] = values[14]; m[15] = values[15];
         }
 
-        // Martix Transform
-        Vec4 Transform(const Vec4& vector) {
-            return Vec4(
-                a[0][0] * vector.x + a[0][1] * vector.y + a[0][2] * vector.z + a[0][3] * vector.w,
-                a[1][0] * vector.x + a[1][1] * vector.y + a[1][2] * vector.z + a[1][3] * vector.w,
-                a[2][0] * vector.x + a[2][1] * vector.y + a[2][2] * vector.z + a[2][3] * vector.w,
-                a[3][0] * vector.x + a[3][1] * vector.y + a[3][2] * vector.z + a[3][3] * vector.w
-            );
+        Matrix() {
+            m[0] = 1; m[1] = 0; m[2] = 0; m[3] = 0;
+            m[4] = 0; m[5] = 1; m[6] = 0; m[7] = 0;
+            m[8] = 0; m[9] = 0; m[10] = 1; m[11] = 0;
+            m[12] = 0; m[13] = 0; m[14] = 0; m[15] = 1;
         }
 
+        // Martix Transformations
         static Matrix Translate(float x, float y, float z) {
             Matrix translate;
             
@@ -249,34 +228,43 @@ class Matrix {
         }
 
         static Matrix RotateX(float angle) {
+            float cos = cosf(angle);
+            float sin = sinf(angle);
+            
             Matrix rotateX;
             
-            rotateX.a[1][1] = std::cosf(angle);
-            rotateX.a[1][2] = -std::sinf(angle);
-            rotateX.a[2][1] = std::sinf(angle);
-            rotateX.a[2][2] = std::cosf(angle);
+            rotateX.a[1][1] = cos;
+            rotateX.a[1][2] = -sin;
+            rotateX.a[2][1] = sin;
+            rotateX.a[2][2] = cos;
 
             return rotateX;
         }
 
         static Matrix RotateY(float angle) {
+            float cos = cosf(angle);
+            float sin = sinf(angle);
+
             Matrix rotateY;
             
-            rotateY.a[0][0] = std::cosf(angle);
-            rotateY.a[0][2] = std::sinf(angle);
-            rotateY.a[2][0] = -std::sinf(angle);
-            rotateY.a[2][2] = std::cosf(angle);
+            rotateY.a[0][0] = cos;
+            rotateY.a[0][2] = sin;
+            rotateY.a[2][0] = -sin;
+            rotateY.a[2][2] = cos;
 
             return rotateY;
         }
 
         static Matrix RotateZ(float angle) {
+            float cos = cosf(angle);
+            float sin = sinf(angle);
+
             Matrix rotateZ;
             
-            rotateZ.a[0][0] = std::cosf(angle);
-            rotateZ.a[0][1] = -std::sinf(angle);
-            rotateZ.a[1][0] = std::sinf(angle);
-            rotateZ.a[1][1] = std::cosf(angle);
+            rotateZ.a[0][0] = cos;
+            rotateZ.a[0][1] = -sin;
+            rotateZ.a[1][0] = sin;
+            rotateZ.a[1][1] = cos;
 
             return rotateZ;
         }
@@ -291,7 +279,25 @@ class Matrix {
             return scale;
         }
 
+        static Matrix Scale(float x, float y, float z) {
+            Matrix scale;
+            
+            scale.a[0][0] = x;
+            scale.a[1][1] = y;
+            scale.a[2][2] = z;
+            
+            return scale;
+        }
+
         // Martix Operators
+        static Matrix CreateBasis(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& d) {
+            Matrix basis;
+            basis.a[0][0] = a.x; basis.a[0][1] = b.x; basis.a[0][2] = c.x; basis.a[0][3] = d.x;
+            basis.a[1][0] = a.y; basis.a[1][1] = b.y; basis.a[1][2] = c.y; basis.a[1][3] = d.y;
+            basis.a[2][0] = a.z; basis.a[2][1] = b.z; basis.a[2][2] = c.z; basis.a[2][3] = d.z;
+            return basis;
+        }
+
         Matrix Transpose() const {
             float values[16] = {
                 a[0][0], a[1][0], a[2][0], a[3][0],
@@ -303,7 +309,7 @@ class Matrix {
             return Matrix(values);
         }
 
-        float Det() {
+        float Det() const {
             float matrix3A[9] = {
                 m[5], m[6], m[7],
                 m[9], m[10], m[11],
@@ -331,7 +337,7 @@ class Matrix {
             return (m[0] * Det3(matrix3A)) - (m[1] * Det3(matrix3B)) + (m[2] * Det3(matrix3C)) - (m[3] * Det3(matrix3D));
         }
 
-        Matrix invert() {
+        Matrix invert() const {
             Matrix inv;
             inv[0]  = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
             inv[4]  = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7 ] * m[10];
@@ -364,7 +370,7 @@ class Matrix {
             return inv;
         }
         
-        Vec4 Mul(const Vec4& vector) {
+        Vec4 Mul(const Vec4& vector) const {
             return Vec4(
                 vector.x * a[0][0] + vector.y * a[0][1] + vector.z * a[0][2] + vector.w * a[0][3],
                 vector.x * a[1][0] + vector.y * a[1][1] + vector.z * a[1][2] + vector.w * a[1][3],
@@ -373,7 +379,7 @@ class Matrix {
             );
         }
 
-        Vec3 MulPoint(const Vec3& vector) {
+        Vec3 MulPoint(const Vec3& vector) const {
             return Vec3(
                 vector.x * a[0][0] + vector.y * a[0][1] + vector.z * a[0][2] + a[0][3],
                 vector.x * a[1][0] + vector.y * a[1][1] + vector.z * a[1][2] + a[1][3],
@@ -381,7 +387,7 @@ class Matrix {
             );
         }
 
-        Vec3 MulVec(const Vec3& vector) {
+        Vec3 MulVec(const Vec3& vector) const {
             return Vec3(
                 vector.x * a[0][0] + vector.y * a[0][1] + vector.z * a[0][2],
                 vector.x * a[1][0] + vector.y * a[1][1] + vector.z * a[1][2],
@@ -395,20 +401,20 @@ class Matrix {
         }
 
         Matrix operator*(const Matrix& matrix) const {
-            return mul(matrix);
+            return Mul(matrix);
         }
 
         Matrix& operator*=(const Matrix& matrix) {
-            *this = mul(matrix);
+            *this = Mul(matrix);
             return *this;
         }
 };
 
-float Dot(const Vec3& a, const Vec3& b) {
-    return a.x * b.x + a.y + b.y + a.z + b.z;
+inline float Dot(const Vec3& a, const Vec3& b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-Vec3 Cross(const Vec3& a, const Vec3& b) {
+inline Vec3 Cross(const Vec3& a, const Vec3& b) {
     return Vec3 (
         (a.y * b.z) - (a.z * b.y),
         (a.z * b.x) - (a.x * b.z),
@@ -416,7 +422,7 @@ Vec3 Cross(const Vec3& a, const Vec3& b) {
     );
 }
 
-Vec3 Min(const Vec3& a, const Vec3& b) {
+inline Vec3 Min(const Vec3& a, const Vec3& b) {
     return Vec3(
         std::min(a.x, b.x),
         std::min(a.y, b.y),
@@ -424,7 +430,7 @@ Vec3 Min(const Vec3& a, const Vec3& b) {
     );
 }
 
-Vec3 Max(const Vec3& a, const Vec3& b) {
+inline Vec3 Max(const Vec3& a, const Vec3& b) {
     return Vec3(
         std::max(a.x, b.x),
         std::max(a.y, b.y),

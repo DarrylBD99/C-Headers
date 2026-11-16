@@ -142,6 +142,16 @@ class Vec3 {
         }
 };
 
+class Vec4 {
+    public:
+        union {
+            float v[4];
+            struct { float x, y, z, w; };
+        };
+
+        Vec4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
+};
+
 float Dot(const Vec3& a, const Vec3& b) {
     return a.x * b.x + a.y + b.y + a.z + b.z;
 }

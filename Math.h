@@ -154,6 +154,27 @@ class Vec4 {
 
 class Matrix {
     private:
+        float Det2(float data[4]) {
+            return (data[0] * data[3]) - (data[1] * data[2]);
+        }
+
+        float Det3(float data[9]) {
+            float matrix2A[4] = {
+                data[4], data[5],
+                data[7], data[8]
+            };
+            float matrix2B[4] = {
+                data[3], data[5],
+                data[6], data[8]
+            };
+            float matrix2C[4] = {
+                data[3], data[4],
+                data[6], data[7]
+            };
+
+            return (data[0] * Det2(matrix2A)) - (data[1] * Det2(matrix2B)) + (data[2] * Det2(matrix2C));
+        }
+
         Matrix mul(const Matrix& matrix) const {
             Matrix ret;
             ret.m[0] = m[0] * matrix.m[0] + m[1] * matrix.m[4] + m[2] * matrix.m[8] + m[3] * matrix.m[12];
@@ -232,7 +253,7 @@ class Matrix {
             
             rotateX.a[1][1] = std::cosf(angle);
             rotateX.a[1][2] = -std::sinf(angle);
-            rotateX.a[2][1] = std::cosf(angle);
+            rotateX.a[2][1] = std::sinf(angle);
             rotateX.a[2][2] = std::cosf(angle);
 
             return rotateX;
@@ -243,7 +264,7 @@ class Matrix {
             
             rotateY.a[0][0] = std::cosf(angle);
             rotateY.a[0][2] = std::sinf(angle);
-            rotateY.a[2][0] = -std::cosf(angle);
+            rotateY.a[2][0] = -std::sinf(angle);
             rotateY.a[2][2] = std::cosf(angle);
 
             return rotateY;
@@ -254,7 +275,7 @@ class Matrix {
             
             rotateZ.a[0][0] = std::cosf(angle);
             rotateZ.a[0][1] = -std::sinf(angle);
-            rotateZ.a[1][0] = std::cosf(angle);
+            rotateZ.a[1][0] = std::sinf(angle);
             rotateZ.a[1][1] = std::cosf(angle);
 
             return rotateZ;
@@ -283,37 +304,63 @@ class Matrix {
         }
 
         float Det() {
-            return 0.0f;
+            float matrix3A[9] = {
+                m[5], m[6], m[7],
+                m[9], m[10], m[11],
+                m[13], m[14], m[15]
+            };
+
+            float matrix3B[9] = {
+                m[4], m[6], m[7],
+                m[8], m[10], m[11],
+                m[12], m[14], m[15]
+            };
+
+            float matrix3C[9] = {
+                m[4], m[5], m[7],
+                m[8], m[9], m[11],
+                m[12], m[13], m[15]
+            };
+
+            float matrix3D[9] = {
+                m[4], m[5], m[6],
+                m[8], m[9], m[10],
+                m[12], m[13], m[14]
+            };
+
+            return (m[0] * Det3(matrix3A)) - (m[1] * Det3(matrix3B)) + (m[2] * Det3(matrix3C)) - (m[3] * Det3(matrix3D));
         }
 
         Matrix invert() {
             Matrix inv;
-            inv [ 0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
-            inv [ 4] = - m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7 ] * m[10];
-            inv [ 8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
-            inv [ 12 ] = - m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
-            inv [ 1] = - m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3 ] * m[10];
-            inv [ 5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
-            inv [ 9] = - m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
-            inv [ 13 ] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
-            inv [ 2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
-            inv [ 6] = - m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
-            inv [ 10 ] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
-            inv [ 14 ] = - m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
-            inv [ 3] = - m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m [6];
-            inv [ 7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[ 6];
-            inv [ 11 ] = - m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5 ];
-            inv [ 15 ] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5] ;
+            inv[0]  = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+            inv[4]  = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7 ] * m[10];
+            inv[8]  = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+            inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+            inv[1]  = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3 ] * m[10];
+            inv[5]  = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+            inv[9]  = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+            inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+            inv[2]  = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+            inv[6]  = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+            inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+            inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+            inv[3]  = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m [6];
+            inv[7]  = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[ 6];
+            inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5 ];
+            inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5] ;
             
-            float det = m[0] * inv [0] + m[1] * inv [4] + m[2] * inv [8] + m[3] * inv [12];
+            float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
             
             if (det == 0) {
-            // Handle this case
+                // Handle this case
+                return Matrix();
             }
-            det = 1.0 / det;
-            for ( int i = 0; i < 16; i++) {
-                inv [ i ] = inv [ i ] * det;
-            }
+
+            float inverseDet = 1.0 / det;
+            for (int i = 0; i < 16; i++)
+                inv[i] = inv[i] * inverseDet;
+            
             return inv;
         }
         
@@ -347,7 +394,7 @@ class Matrix {
             return m[index];
         }
 
-        Matrix& operator*(const Matrix& matrix) const {
+        Matrix operator*(const Matrix& matrix) const {
             return mul(matrix);
         }
 

@@ -454,7 +454,7 @@ class ShadingFrame {
         Vec3 u, v, n;
 
         ShadingFrame(const Vec3& normal) : u(0, 0, 0), v(0, 0, 0), n(normal.Normalize()) {
-            Vec3 colinearAxis = (n.x != 1.0f && n.y != 0.0f && n.z != 0.0f) ? Vec3(1, 0, 0) : Vec3(0, 1, 0);
+            Vec3 colinearAxis = (n.x != 1.0f || n.y != 0.0f || n.z != 0.0f) ? Vec3(1, 0, 0) : Vec3(0, 1, 0);
             u = Cross(n, colinearAxis).Normalize();
             v = Cross(n, u).Normalize();
         }

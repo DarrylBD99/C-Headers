@@ -147,6 +147,34 @@ class Vec3 {
         }
 };
 
+inline float Dot(const Vec3& a, const Vec3& b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline Vec3 Cross(const Vec3& a, const Vec3& b) {
+    return Vec3 (
+        (a.y * b.z) - (a.z * b.y),
+        (a.z * b.x) - (a.x * b.z),
+        (a.x * b.y) - (a.y * b.x)
+    );
+}
+
+inline Vec3 Min(const Vec3& a, const Vec3& b) {
+    return Vec3(
+        std::min(a.x, b.x),
+        std::min(a.y, b.y),
+        std::min(a.z, b.z)
+    );
+}
+
+inline Vec3 Max(const Vec3& a, const Vec3& b) {
+    return Vec3(
+        std::max(a.x, b.x),
+        std::max(a.y, b.y),
+        std::max(a.z, b.z)
+    );
+}
+
 class Vec4 {
     public:
         union {
@@ -637,6 +665,23 @@ class Quaternion {
 
 };
 
+inline float Dot(const Quaternion& a, const Quaternion& b) {
+    return a.d * b.d + a.a * b.a + a.b * b.b + a.c * b.c; 
+}
+
+inline Quaternion Slerp(Quaternion from, Quaternion to, float time) {
+    float dotProduct = Dot(from, to);
+    if (dotProduct < 0.0f) {
+        to = to * -1.0f;
+        dotProduct = -dotProduct;
+    }
+    
+    float angle = acosf(dotProduct);
+    float sin = sinf(angle);
+
+    return from * (sinf(angle * (1 - time)) / sin) + to * (sinf(angle * time) / sin);
+}
+
 class Color {
     public:
         union {
@@ -652,7 +697,7 @@ class Color {
             a = std::clamp(a, 0.0f, 1.0f);
         }
 
-        Color(unsigned char r_, unsigned char g_, unsigned char b_, unsigned char a_) : r(r_ / 255.0f), g(g_ / 255.0f), b(b_ / 255.0f), a(a_ / 255.0f) {}
+        Color(unsigned char r_, unsigned char g_, unsigned char b_, unsigned char a_ = 255) : r(r_ / 255.0f), g(g_ / 255.0f), b(b_ / 255.0f), a(a_ / 255.0f) {}
 
         Color operator+ ( const Color &color ) const {
             return Color(
@@ -735,48 +780,3 @@ class Color {
             return *this;
         }
 };
-
-inline float Dot(const Vec3& a, const Vec3& b) {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-inline float Dot(const Quaternion& a, const Quaternion& b) {
-    return a.d * b.d + a.a * b.a + a.b * b.b + a.c * b.c; 
-}
-
-inline Vec3 Cross(const Vec3& a, const Vec3& b) {
-    return Vec3 (
-        (a.y * b.z) - (a.z * b.y),
-        (a.z * b.x) - (a.x * b.z),
-        (a.x * b.y) - (a.y * b.x)
-    );
-}
-
-inline Vec3 Min(const Vec3& a, const Vec3& b) {
-    return Vec3(
-        std::min(a.x, b.x),
-        std::min(a.y, b.y),
-        std::min(a.z, b.z)
-    );
-}
-
-inline Vec3 Max(const Vec3& a, const Vec3& b) {
-    return Vec3(
-        std::max(a.x, b.x),
-        std::max(a.y, b.y),
-        std::max(a.z, b.z)
-    );
-}
-
-inline Quaternion Slerp(Quaternion from, Quaternion to, float time) {
-    float dotProduct = Dot(from, to);
-    if (dotProduct < 0.0f) {
-        to = to * -1.0f;
-        dotProduct = -dotProduct;
-    }
-    
-    float angle = acosf(dotProduct);
-    float sin = sinf(angle);
-
-    return from * (sinf(angle * (1 - time)) / sin) + to * (sinf(angle * time) / sin);
-}

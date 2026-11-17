@@ -439,6 +439,36 @@ class ShadingFrame {
         }
 };
 
+class SphereCoord {
+    public:
+        union {
+            float v[3];
+            struct { float theta, phi, r; };
+        };
+
+        bool isCamera;
+
+        SphereCoord(const Vec3& vector, float r_ = 1.0f, bool isCamera_ = false) : r(r_), isCamera(isCamera_) {
+            if (r <= 0.0f || vector.Length() == 0.0f) {
+                theta = 0.0f;
+                phi = 0.0f;
+                return;
+            }
+            
+            Vec3 normalizedVector = vector.Normalize();
+            theta = acosf( (isCamera) ? normalizedVector.y : normalizedVector.z );
+            phi = atan2f( (isCamera) ? normalizedVector.z : normalizedVector.y , normalizedVector.x );
+        }
+        
+        Vec3 GetCartesian() {
+            float x = r * sinf(theta) * cos(phi);
+            float y = (isCamera) ? (r * cosf(theta)) : (r * sinf(theta) * sin(phi));
+            float z = (isCamera) ? (r * sinf(theta) * sin(phi)) : (r * cosf(theta));
+            
+            return Vec3(x, y, z);
+        }
+};
+
 inline float Dot(const Vec3& a, const Vec3& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }

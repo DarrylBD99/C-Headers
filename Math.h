@@ -469,6 +469,98 @@ class SphereCoord {
         }
 };
 
+class Color {
+    public:
+        union {
+            float c[4];
+            struct { float r, g, b, a;};
+        };
+
+        Color(float r_, float g_, float b_, float a_ = 1.0f) : r(r_), g(g_), b(b_), a(a_) {
+            r = std::clamp(r, 0.0f, 1.0f);
+            g = std::clamp(g, 0.0f, 1.0f);
+            b = std::clamp(b, 0.0f, 1.0f);
+            a = std::clamp(a, 0.0f, 1.0f);
+        }
+
+        Color(unsigned char r_, unsigned char g_, unsigned char b_, unsigned char a_) {
+            r = (float)r_ / 255.0f;
+            g = (float)g_ / 255.0f;
+            b = (float)b_ / 255.0f;
+            a = (float)a_ / 255.0f;
+        }
+
+        Color operator+ ( const Color &color ) const {
+            return Color(
+                std::clamp(r + color.r, 0.0f, 1.0f),
+                std::clamp(g + color.g, 0.0f, 1.0f),
+                std::clamp(b + color.b, 0.0f, 1.0f),
+                std::clamp(a + color.a, 0.0f, 1.0f)
+            );
+        }
+
+        Color& operator+= ( const Color &color ) {
+            r = std::clamp(r + color.r, 0.0f, 1.0f);
+            g = std::clamp(g + color.g, 0.0f, 1.0f);
+            b = std::clamp(b + color.b, 0.0f, 1.0f);
+            a = std::clamp(a + color.a, 0.0f, 1.0f);
+
+            return *this;
+        }
+
+        Color operator* ( const Color &color ) const {
+            return Color(
+                std::clamp(r * color.r, 0.0f, 1.0f),
+                std::clamp(g * color.g, 0.0f, 1.0f),
+                std::clamp(b * color.b, 0.0f, 1.0f),
+                std::clamp(a * color.a, 0.0f, 1.0f)
+            );
+        }
+
+        Color& operator*= ( const Color &color ) {
+            r = std::clamp(r * color.r, 0.0f, 1.0f);
+            g = std::clamp(g * color.g, 0.0f, 1.0f);
+            b = std::clamp(b * color.b, 0.0f, 1.0f);
+            a = std::clamp(a * color.a, 0.0f, 1.0f);
+
+            return *this;
+        }
+
+        Color operator* ( const float a_ ) const {
+            return Color(
+                std::clamp(r * a_, 0.0f, 1.0f),
+                std::clamp(g * a_, 0.0f, 1.0f),
+                std::clamp(b * a_, 0.0f, 1.0f),
+                a
+            );
+        }
+
+        Color& operator*= ( const float a_ ) {
+            r = std::clamp(r * a_, 0.0f, 1.0f);
+            g = std::clamp(g * a_, 0.0f, 1.0f);
+            b = std::clamp(b * a_, 0.0f, 1.0f);
+
+            return *this;
+        }
+
+        Color operator/ ( const float a_ ) const {
+            return Color(
+                std::clamp(r / a_, 0.0f, 1.0f),
+                std::clamp(g / a_, 0.0f, 1.0f),
+                std::clamp(b / a_, 0.0f, 1.0f),
+                a
+            );
+        }
+
+        Color& operator/= ( const float a_ ) {
+            r = std::clamp(r / a_, 0.0f, 1.0f);
+            g = std::clamp(g / a_, 0.0f, 1.0f);
+            b = std::clamp(b / a_, 0.0f, 1.0f);
+
+            return *this;
+        }
+};
+
 inline float Dot(const Vec3& a, const Vec3& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }

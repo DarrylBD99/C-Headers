@@ -18,17 +18,19 @@ class Vec3 {
             struct { float x, y, z; };
         };
 
+        Vec3() : x(0), y(0), z(0) {}
+
         Vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
 
-        float LengthSquare() {
+        float LengthSquare() const {
             return (x * x) + (y * y) + (z * z);
         }
 
-        float Length() {
+        float Length() const {
             return sqrtf(LengthSquare());
         }
 
-        Vec3 Normalize() {
+        Vec3 Normalize() const {
             float len = 1.0f / Length();
             return Vec3(x * len, y * len, z * len);
         }
@@ -64,8 +66,8 @@ class Vec3 {
             return std::max({x, y, z});
         }
 
-        std::string ToString() {
-            return "{" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ", " + "}";
+        std::string ToString() const {
+            return "{" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + "}";
         }
 
         // Overload Operators
@@ -148,6 +150,8 @@ class Vec4 {
             float v[4];
             struct { float x, y, z, w; };
         };
+
+        Vec4() : x(0), y(0), z(0), w(0) {}
 
         Vec4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
 };
@@ -363,7 +367,7 @@ class Matrix {
                 return Matrix();
             }
 
-            float inverseDet = 1.0 / det;
+            float inverseDet = 1.0f / det;
             for (int i = 0; i < 16; i++)
                 inv[i] = inv[i] * inverseDet;
             
@@ -407,6 +411,31 @@ class Matrix {
         Matrix& operator*=(const Matrix& matrix) {
             *this = Mul(matrix);
             return *this;
+        }
+};
+
+class ShadingFrame {
+    public:
+        Vec3 u, v, n;
+
+        ShadingFrame(const Vec3& normal) : u(0, 0, 0), v(0, 0, 0), n(normal) {
+            n.Normalize();
+
+            Vec3 colinearAxis = (n.x != 1.0f && n.y != 0.0f && n.z != 0.0f) ? Vec3(1, 0, 0) : Vec3(0, 1, 0);
+            u = Cross(n, colinearAxis).Normalize();
+            v = Cross(n, u);
+        }
+
+        Vec3 ForwardTransform(const Vec3& vector) const {
+            return (u * vector.x) + (v * vector.y) + (n * vector.z);
+        }
+
+        Vec3 InverseTransform(const Vec3& vector) const {
+            return Vec3(
+                Dot(u, vector),
+                Dot(v, vector),
+                Dot(n, vector)
+            );
         }
 };
 

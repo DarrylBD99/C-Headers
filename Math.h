@@ -486,6 +486,157 @@ class SphereCoord {
         }
 };
 
+class Quaternion {
+    public:
+        union {
+            float q[4];
+            struct { float a, b, c, d; }; // Q = d + ai + bj + ck
+        };
+
+        Quaternion() : a(0.0f), b(0.0f), c(0.0f), d(1.0f) {}
+        Quaternion(float a_, float b_, float c_, float d_) : a(a_), b(b_), c(c_), d(d_) {}
+        Quaternion(const Vec3& vector, float angle) {
+            if (vector.LengthSquare() == 0.0f) {
+                *this = Quaternion();
+                return;
+            }
+
+            float s = sinf(angle / 2.0f);
+            Vec3 normalizedVector = vector.Normalize();
+
+            a = normalizedVector.x * s;
+            b = normalizedVector.y * s;
+            c = normalizedVector.z * s;
+            d = cosf(angle / 2.0f);
+        }
+
+        float MagnitudeSquared() const {
+            return (a * a) + (b * b) + (c * c) + (d * d);
+        }
+
+        float Magnitude() const {
+            return sqrtf(MagnitudeSquared());
+        }
+
+        Quaternion Normalize() const {
+            float magnitude = Magnitude();
+
+            if (magnitude == 0.0f) return Quaternion();
+
+            return Quaternion(
+                a / magnitude,
+                b / magnitude,
+                c / magnitude,
+                d / magnitude
+            );
+        }
+
+        // Q* = d - ai - bj - dk
+        Quaternion Conjugate() const {
+            return Quaternion(-a, -b, -c, d);
+        }
+
+        // Q^-1 = Q* / |Q|^2
+        Quaternion Inverse() const {
+            float magnitudeSquared = MagnitudeSquared();
+
+            if (magnitudeSquared == 0.0f) return Quaternion();
+            
+            return Quaternion(
+                -a / magnitudeSquared,
+                -b / magnitudeSquared,
+                -c / magnitudeSquared,
+                d / magnitudeSquared
+            );
+        }
+
+        Matrix ToMatrix () const {
+            float aa = a * a, ab = a * b, ac = a * c;
+            float bb = b * b, bc = b * c, cc = c * c;
+            float da = d * a, db = d * b, dc = d * c;
+
+            Matrix m;
+            m[0] = 1 - 2 * (bb + cc); m [1] = 2 * (ab - dc); m [2] = 2 * (ac + db); m [3] = 0;
+            m[4] = 2 * (ab + dc); m [5] = 1 - 2 * (aa + cc); m [6] = 2 * (bc - da); m [7] = 0;
+            m[8] = 2 * (ac - db); m [9] = 2 * (bc + da); m [10] = 1 - 2 * (aa + bb); m [11] = 0;
+            m[12] = m [13] = m [14] = 0; m [15] = 1;
+            
+            return m;
+        }
+
+        float Dot(const Quaternion& quaternion) const {
+            return d * quaternion.d + a * quaternion.a + b * quaternion.b + c * quaternion.c; 
+        }
+
+        // Operation Overload
+        Quaternion operator+(const Quaternion& quaternion) const {
+            return Quaternion(
+                a + quaternion.a,
+                b + quaternion.b,
+                c + quaternion.c,
+                d + quaternion.d
+            );
+        }
+        
+        Quaternion& operator+=(const Quaternion& quaternion) {
+            a += quaternion.a;
+            b += quaternion.b;
+            c += quaternion.c;
+            d += quaternion.d;
+            return *this;
+        }
+
+        Quaternion operator-(const Quaternion& quaternion) const {
+            return Quaternion(
+                a - quaternion.a,
+                b - quaternion.b,
+                c - quaternion.c,
+                d - quaternion.d
+            );
+        }
+        
+        Quaternion& operator-=(const Quaternion& quaternion) {
+            a -= quaternion.a;
+            b -= quaternion.b;
+            c -= quaternion.c;
+            d -= quaternion.d;
+            return *this;
+        }
+
+        Quaternion operator*(const Quaternion& quaternion) const {
+            return Quaternion(
+                a * quaternion.d + d * quaternion.a + b * quaternion.c - c * quaternion.b,
+                b * quaternion.d + d * quaternion.b + c * quaternion.a - a * quaternion.c,
+                c * quaternion.d + d * quaternion.c + a * quaternion.b - b * quaternion.a,
+                d * quaternion.d - a * quaternion.a - b * quaternion.b - c * quaternion.c
+            );
+        }
+
+        Quaternion& operator*=(const Quaternion& quaternion) {
+            *this = *this * quaternion;
+            return *this;
+        }
+
+        Quaternion operator*(float value) const {
+            return Quaternion(
+                a * value,
+                b * value,
+                c * value,
+                d * value
+            );
+        }
+
+        Quaternion& operator*=(float value) {
+            a *= value;
+            b *= value;
+            c *= value;
+            d *= value;
+
+            return *this;
+        }
+
+};
+
 class Color {
     public:
         union {
@@ -589,6 +740,10 @@ inline float Dot(const Vec3& a, const Vec3& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+inline float Dot(const Quaternion& a, const Quaternion& b) {
+    return a.d * b.d + a.a * b.a + a.b * b.b + a.c * b.c; 
+}
+
 inline Vec3 Cross(const Vec3& a, const Vec3& b) {
     return Vec3 (
         (a.y * b.z) - (a.z * b.y),
@@ -611,4 +766,17 @@ inline Vec3 Max(const Vec3& a, const Vec3& b) {
         std::max(a.y, b.y),
         std::max(a.z, b.z)
     );
+}
+
+inline Quaternion Slerp(Quaternion from, Quaternion to, float time) {
+    float dotProduct = Dot(from, to);
+    if (dotProduct < 0.0f) {
+        to = to * -1.0f;
+        dotProduct = -dotProduct;
+    }
+    
+    float angle = acosf(dotProduct);
+    float sin = sinf(angle);
+
+    return from * (sinf(angle * (1 - time)) / sin) + to * (sinf(angle * time) / sin);
 }

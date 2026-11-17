@@ -430,11 +430,23 @@ class ShadingFrame {
             u = Cross(n, colinearAxis).Normalize();
             v = Cross(n, u).Normalize();
         }
-
+        
+        /* Matrix Visualization:
+        
+        |u.x, v.x, n.x|   | x |
+        |u.y, v.y, n.y| * | y |
+        |u.z, v.z, n.z|   | z |
+        */
         Vec3 ForwardTransform(const Vec3& vector) const {
             return (u * vector.x) + (v * vector.y) + (n * vector.z);
         }
 
+        /* Matrix Visualization:
+        
+        |u.x, u.y, u.z|   | x |
+        |v.x, v.y, v.z| * | y |
+        |n.x, n.y, n.z|   | z |
+        */
         Vec3 InverseTransform(const Vec3& vector) const {
             return Vec3(
                 Dot(u, vector),

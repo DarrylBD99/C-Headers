@@ -31,18 +31,21 @@ class Vec3 {
         }
 
         Vec3 Normalize() const {
-            float len = 1.0f / Length();
-            return Vec3(x * len, y * len, z * len);
+            float length = Length();
+            if (length == 0.0f) return Vec3(0.0f, 0.0f, 0.0f);
+
+            return Vec3(x / length, y / length, z / length);
         }
 
         float Normalize_GetLength() {
             float length = Length();
-            float len = 1.0f / length;
-            
-            x *= len;
-            y *= len;
-            z *= len;
-            
+
+            if (length == 0.0f) return 0.0f;
+
+            x /= length;
+            y /= length;
+            z /= length;
+
             return length;
         }
 
@@ -206,7 +209,7 @@ class Matrix {
             float m[16];
         };
 
-        Matrix(float values[16]) {
+        Matrix(const float values[16]) {
             m[0] = values[0]; m[1] = values[1]; m[2] = values[2]; m[3] = values[3];
             m[4] = values[4]; m[5] = values[5]; m[6] = values[6]; m[7] = values[7];
             m[8] = values[8]; m[9] = values[9]; m[10] = values[10]; m[11] = values[11];
@@ -376,31 +379,35 @@ class Matrix {
         
         Vec4 Mul(const Vec4& vector) const {
             return Vec4(
-                vector.x * a[0][0] + vector.y * a[0][1] + vector.z * a[0][2] + vector.w * a[0][3],
-                vector.x * a[1][0] + vector.y * a[1][1] + vector.z * a[1][2] + vector.w * a[1][3],
-                vector.x * a[2][0] + vector.y * a[2][1] + vector.z * a[2][2] + vector.w * a[2][3],
-                vector.x * a[3][0] + vector.y * a[3][1] + vector.z * a[3][2] + vector.w * a[3][3]
+                m[0] * vector.x + m[1] * vector.y + m[2] * vector.z + m[3] * vector.w,
+                m[4] * vector.x + m[5] * vector.y + m[6] * vector.z + m[7] * vector.w,
+                m[8] * vector.x + m[9] * vector.y + m[10] * vector.z + m[11] * vector.w,
+                m[12] * vector.x + m[13] * vector.y + m[14] * vector.z + m[15] * vector.w
             );
         }
 
         Vec3 MulPoint(const Vec3& vector) const {
             return Vec3(
-                vector.x * a[0][0] + vector.y * a[0][1] + vector.z * a[0][2] + a[0][3],
-                vector.x * a[1][0] + vector.y * a[1][1] + vector.z * a[1][2] + a[1][3],
-                vector.x * a[2][0] + vector.y * a[2][1] + vector.z * a[2][2] + a[2][3]
+                m[0] * vector.x + m[1] * vector.y + m[2] * vector.z + m[3],
+                m[4] * vector.x + m[5] * vector.y + m[6] * vector.z + m[7],
+                m[8] * vector.x + m[9] * vector.y + m[10] * vector.z + m[11]
             );
         }
 
         Vec3 MulVec(const Vec3& vector) const {
             return Vec3(
-                vector.x * a[0][0] + vector.y * a[0][1] + vector.z * a[0][2],
-                vector.x * a[1][0] + vector.y * a[1][1] + vector.z * a[1][2],
-                vector.x * a[2][0] + vector.y * a[2][1] + vector.z * a[2][2]
+                m[0] * vector.x + m[1] * vector.y + m[2] * vector.z,
+                m[4] * vector.x + m[5] * vector.y + m[6] * vector.z,
+                m[8] * vector.x + m[9] * vector.y + m[10] * vector.z
             );
         }
 
         // Operator Overload
         float& operator[](int index) {
+            return m[index];
+        }
+
+        const float& operator[](int index) const {
             return m[index];
         }
 
@@ -418,12 +425,10 @@ class ShadingFrame {
     public:
         Vec3 u, v, n;
 
-        ShadingFrame(const Vec3& normal) : u(0, 0, 0), v(0, 0, 0), n(normal) {
-            n.Normalize();
-
+        ShadingFrame(const Vec3& normal) : u(0, 0, 0), v(0, 0, 0), n(normal.Normalize()) {
             Vec3 colinearAxis = (n.x != 1.0f && n.y != 0.0f && n.z != 0.0f) ? Vec3(1, 0, 0) : Vec3(0, 1, 0);
             u = Cross(n, colinearAxis).Normalize();
-            v = Cross(n, u);
+            v = Cross(n, u).Normalize();
         }
 
         Vec3 ForwardTransform(const Vec3& vector) const {
@@ -446,10 +451,10 @@ class SphereCoord {
             struct { float theta, phi, r; };
         };
 
-        bool isCamera;
+        bool isCamera; // true if Y Up, false is Z Up
 
         SphereCoord(const Vec3& vector, float r_ = 1.0f, bool isCamera_ = false) : r(r_), isCamera(isCamera_) {
-            if (r <= 0.0f || vector.Length() == 0.0f) {
+            if (r <= 0.0f || vector.LengthSquare() == 0.0f) {
                 theta = 0.0f;
                 phi = 0.0f;
                 return;
@@ -460,7 +465,7 @@ class SphereCoord {
             phi = atan2f( (isCamera) ? normalizedVector.z : normalizedVector.y , normalizedVector.x );
         }
         
-        Vec3 GetCartesian() {
+        Vec3 GetCartesian() const {
             float x = r * sinf(theta) * cos(phi);
             float y = (isCamera) ? (r * cosf(theta)) : (r * sinf(theta) * sin(phi));
             float z = (isCamera) ? (r * sinf(theta) * sin(phi)) : (r * cosf(theta));
@@ -476,6 +481,7 @@ class Color {
             struct { float r, g, b, a;};
         };
 
+        // Operator Overload
         Color(float r_, float g_, float b_, float a_ = 1.0f) : r(r_), g(g_), b(b_), a(a_) {
             r = std::clamp(r, 0.0f, 1.0f);
             g = std::clamp(g, 0.0f, 1.0f);
@@ -483,12 +489,7 @@ class Color {
             a = std::clamp(a, 0.0f, 1.0f);
         }
 
-        Color(unsigned char r_, unsigned char g_, unsigned char b_, unsigned char a_) {
-            r = (float)r_ / 255.0f;
-            g = (float)g_ / 255.0f;
-            b = (float)b_ / 255.0f;
-            a = (float)a_ / 255.0f;
-        }
+        Color(unsigned char r_, unsigned char g_, unsigned char b_, unsigned char a_) : r(r_ / 255.0f), g(g_ / 255.0f), b(b_ / 255.0f), a(a_ / 255.0f) {}
 
         Color operator+ ( const Color &color ) const {
             return Color(
@@ -544,6 +545,10 @@ class Color {
         }
 
         Color operator/ ( const float a_ ) const {
+            // Check for zero-division
+            if (a_ == 0.0f)
+                return Color(0, 0, 0, a);
+
             return Color(
                 std::clamp(r / a_, 0.0f, 1.0f),
                 std::clamp(g / a_, 0.0f, 1.0f),
@@ -553,6 +558,13 @@ class Color {
         }
 
         Color& operator/= ( const float a_ ) {
+            // Check for zero-division
+            if (a_ == 0.0f) {
+                r = g = b = 0.0f;
+                return *this;
+            }
+                
+            
             r = std::clamp(r / a_, 0.0f, 1.0f);
             g = std::clamp(g / a_, 0.0f, 1.0f);
             b = std::clamp(b / a_, 0.0f, 1.0f);
